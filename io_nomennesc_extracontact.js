@@ -11,7 +11,6 @@ extraContact.prototype.init =
   function () {
 	AjxDispatcher.require(["Contacts"]);
 	AjxDispatcher.require(["ContactsCore"]);
-	AjxDispatcher.require(["Extras"]);
 	ZmContact.F_key = "key";
 	ZmContact.PRIMARY_FIELDS.push(ZmContact.F_key);
 	ZmContact._AB_FIELD.key = ZmMsg.key;
