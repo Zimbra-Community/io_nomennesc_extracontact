@@ -1,0 +1,8 @@
+<zimlet name="io_nomennesc_extracontact"
+        version="0.0.1"
+        target="main view-window"
+        label="ExtraContact"
+        description="Adds a Key field to contacts">
+    <include>io_nomennesc_extracontact.js</include>
+    <handlerObject>io_nomennesc_extracontact_HandlerObject</handlerObject>
+</zimlet>
