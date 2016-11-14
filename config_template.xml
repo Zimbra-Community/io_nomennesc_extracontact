@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+The extracontact_field property contains JSON that defines the custom contacts fields
+-->
+<zimletConfig name="io_nomennesc_extracontact" version="0.1"><global>
+<property name="extracontact_field">{"fields":[{"id":"key","type":"DwtInputField","width":"47em","rows":"4","label":"Key","msg":"KeyMsg"},{"id":"geo","type":"DwtInputField","width":"47em","rows":"2","label":"Geo","msg":"GeoMsg"}]}</property>
+</global></zimletConfig>
