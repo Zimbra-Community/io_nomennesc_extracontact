@@ -6,15 +6,23 @@ function io_nomennesc_extracontact_HandlerObject() {
 io_nomennesc_extracontact_HandlerObject.prototype = new ZmZimletBase();
 io_nomennesc_extracontact_HandlerObject.prototype.constructor = io_nomennesc_extracontact_HandlerObject;
 var extraContact = io_nomennesc_extracontact_HandlerObject;
+var fields;
 
 extraContact.prototype.init =
   function () {
 	AjxDispatcher.require(["Contacts"]);
 	AjxDispatcher.require(["ContactsCore"]);
-	ZmContact.F_key = "key";
-	ZmContact.PRIMARY_FIELDS.push(ZmContact.F_key);
-	ZmContact._AB_FIELD.key = ZmMsg.key;
-	ZmEditContactView.ATTRS.KEY = ZmContact.F_key;
+	var fieldsconfig = JSON.parse(this._zimletContext.getConfig("extracontact_field"));
+	fields = fieldsconfig["fields"];
+        for(var i=0;i<fields.length;i++) {
+                field=fields[i];
+		ZmMsg[field.id] = field.msg;
+		ZmMsg[field.id + "Label"] = field.label;
+		ZmContact["F_" + field.id] = field.id;
+		ZmContact.PRIMARY_FIELDS.push(ZmContact["F_" + field.id]);
+		ZmContact._AB_FIELD[field.id] = ZmMsg[field.id];
+		ZmEditContactView.ATTRS[field.id.toUpperCase()] = ZmContact["F_" + field.id];
+        }
 	if(ZmEditContactView){
 
 ZmEditContactView.prototype.getFormItems = function() {
@@ -39,7 +47,6 @@ ZmEditContactView.prototype.getFormItems = function() {
                         { id: "TITLE", type: "DwtInputField", width: 209, hint: ZmMsg.AB_FIELD_jobTitle, visible: "get('SHOW_TITLE')" },
                         { id: "DEPARTMENT", type: "DwtInputField", width: 209, hint: ZmMsg.AB_FIELD_department, visible: "get('SHOW_DEPARTMENT')" },
                         { id: "NOTES", type: "DwtInputField", hint: ZmMsg.notes, width: "47em", rows:4 },
-                        { id: "KEY", type: "DwtInputField", hint: ZmMsg.key, width: "47em", rows:4 },
             // phonetic name fields
             { id: "PHONETIC_PREFIX", visible: "this.isVisible('PREFIX')", ignore:true },
             { id: "PHONETIC_FIRST", type: "DwtInputField", width: 95, hint: ZmMsg.AB_FIELD_phoneticFirstName, visible: "this.isVisible('FIRST')" },
@@ -113,19 +120,31 @@ ZmEditContactView.prototype.getFormItems = function() {
                                 ignore:true, visible: "get('SHOW_TITLE') && get('SHOW_DEPARTMENT')"
                         }
                 ];
+		for(var i=0;i<fields.length;i++) { 
+			field=fields[i];
+			var item = new Object();
+			item.id=field.id.toUpperCase();
+			item.type=field.type;
+			item.hint=ZmMsg[field.id];
+			item.width=field.width;
+			item.rows=parseInt(field.rows);
+			this._formItems.push(item);
+		}
         }
         return this._formItems;
 };
 
-ZmContactSplitView.showContactKey =
-function(data) {
-
-        var itemListData = ZmContactSplitView._getListData(data, ZmMsg.keyLabel);
-        itemListData.encode = AjxStringUtil.nl2br;
-        itemListData.name = ZmContact.F_key;
-        itemListData.names = [ZmContact.F_key];
-        return ZmContactSplitView._showContactListItem(itemListData);
-};
+for(var i=0;i<fields.length;i++) {
+        field=fields[i];
+	ZmContactSplitView["showContact" + field.id.charAt(0).toUpperCase() + field.id.slice(1)] = 
+	function(data) {
+        	var itemListData = ZmContactSplitView._getListData(data, ZmMsg[field.id + "Label"]);
+        	itemListData.encode = AjxStringUtil.nl2br;
+        	itemListData.name = ZmContact["F_" + field.id];
+        	itemListData.names = [ZmContact["F_" + field.id]];
+        	return ZmContactSplitView._showContactListItem(itemListData);
+	};
+}
 
 AjxTemplate.register("abook.Contacts#SplitView_content",
 function(name, params, data, buffer) {
@@ -145,7 +164,10 @@ function(name, params, data, buffer) {
         buffer[_i++] =  ZmContactSplitView.showContactUrls(data) ;
         buffer[_i++] =  ZmContactSplitView.showContactOther(data) ;
         buffer[_i++] =  ZmContactSplitView.showContactNotes(data) ;
-        buffer[_i++] =  ZmContactSplitView.showContactKey(data) ;
+	for(var i=0;i<fields.length;i++) {
+		field=fields[i];
+        	buffer[_i++] =  ZmContactSplitView["showContact" + field.id.charAt(0).toUpperCase() + field.id.slice(1)](data) ;
+	}
         buffer[_i++] =  ZmContactSplitView.showContactDLMembers(data) ;
         buffer[_i++] = "</table>";
 
@@ -190,12 +212,16 @@ function(name, params, data, buffer) {
         buffer[_i++] = ZmMsg.notesLabel;
         buffer[_i++] = "</td><td class=rowValue><div id='";
         buffer[_i++] = data["id"];
-        buffer[_i++] = "_NOTES' tabindex='1100'></div></td></tr><tr><td class=rowLabel>";
-        buffer[_i++] = ZmMsg.keyLabel;
-        buffer[_i++] = "</td><td class=rowValue><div id='";
-        buffer[_i++] = data["id"];
-        buffer[_i++] = "_KEY' tabindex='1100'></div></td></tr>";
-
+        buffer[_i++] = "_NOTES' tabindex='1100'></div></td></tr>";
+        for(var i=0;i<fields.length;i++) {
+                field=fields[i];
+		buffer[_i++] = "<tr><td class=rowLabel>";
+        	buffer[_i++] = ZmMsg[field.id + "Label"];
+        	buffer[_i++] = "</td><td class=rowValue><div id='";
+        	buffer[_i++] = data["id"];
+		var tabindex = 1200 + i*100;
+        	buffer[_i++] = "_" + field.id.toUpperCase() + "' tabindex='" + tabindex.toString() + "'></div></td></tr>";
+	}
         return _hasBuffer ? buffer.length : buffer.join("");
 },
 {
